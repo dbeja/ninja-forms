@@ -275,7 +275,13 @@ define(['models/calcCollection'], function( CalcCollection ) {
 			var value = this.getCalcValue( fieldModel );
 			this.updateCalcFields( calcModel, key, value );
 			var eqValues = this.replaceAllKeys( calcModel );
-			calcModel.set( 'value', Number( mexp.eval( eqValues ) ).toFixed( calcModel.get( 'dec' ) ) );
+            eqValues = eqValues.replace( /\r?\n|\r/g, '' );
+            try {
+			     calcModel.set( 'value', Number( mexp.eval( eqValues ) ).toFixed( calcModel.get( 'dec' ) ) );
+            } catch( e ) {
+                console.log( e );
+            }
+            if( calcModel.get( 'value' ) === 'NaN' ) calcModel.set( 'value', 0 );
 
 			// Debugging console statement.
 			// console.log( eqValues + ' = ' + calcModel.get( 'value' ) );		
@@ -344,7 +350,13 @@ define(['models/calcCollection'], function( CalcCollection ) {
 		changeCalc: function( calcModel, targetCalcModel ) {
 			var eqValues = this.replaceAllKeys( calcModel );
 			eqValues = eqValues.replace( '[', '' ).replace( ']', '' );
-			calcModel.set( 'value', Number( mexp.eval( eqValues ) ).toFixed( calcModel.get( 'dec' ) ) );
+            eqValues = eqValues.replace( /\r?\n|\r/g, '' );
+            try {
+			     calcModel.set( 'value', Number( mexp.eval( eqValues ) ).toFixed( calcModel.get( 'dec' ) ) );
+            } catch( e ) {
+                console.log( e );
+            }
+            if( calcModel.get( 'value' ) === 'NaN' ) calcModel.set( 'value', 0 );
 		},
         
         /**

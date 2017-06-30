@@ -218,6 +218,14 @@ jBox
         padding: 10px;
         width: 100%;
     }
+
+    .buttons {
+       &::after {
+         clear: none;
+         content: "";
+         display: block;
+       }
+     }
 }
 
 /*
