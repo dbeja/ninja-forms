@@ -144,6 +144,9 @@ class NF_Admin_CPT_Submission
 
         $form_fields = Ninja_Forms()->form( $form_id )->get_fields();
 
+        $has_inline_quantities = false;
+        $last_product_id = 0;
+
         foreach( $form_fields as $field ) {
 
             if( is_object( $field ) ) {
@@ -159,6 +162,22 @@ class NF_Admin_CPT_Submission
             $id = $field[ 'id' ];
             $label = $field[ 'settings' ][ 'label' ];
             $columns[ $id ] = ( isset( $field[ 'settings' ][ 'admin_label' ] ) && $field[ 'settings' ][ 'admin_label' ] ) ? $field[ 'settings' ][ 'admin_label' ] : $label;
+
+            // Check if it's a product with inline quantities
+            if( 'product' === $field[ 'settings' ][ 'type' ] &&  $field[ 'settings' ][ 'product_use_quantity' ] ) {
+                $has_inline_quantities = true;
+                $last_product_id = $id;
+            }
+        }
+
+        // if it has inline quantities add quantity column after last product
+        if( $has_inline_quantities ) {
+            // find last product position
+            $new_column_pos = array_search( $last_product_id, array_keys($columns) ) + 1;
+            // insert new column for total quantity
+            $columns = array_slice( $columns, 0, $new_column_pos, true ) +
+                array( 'nf_inline_quantity' => __( 'Quantity', 'ninja-forms' ) ) +
+                array_slice( $columns, $new_column_pos, NULL, true );
         }
 
         $columns['sub_date'] = __( 'Date', 'ninja-forms' );
@@ -189,6 +208,34 @@ class NF_Admin_CPT_Submission
             }
             $field = $fields[$column];
             echo apply_filters( 'ninja_forms_custom_columns', $value, $field, $sub_id );
+        }
+
+        // show quantity for product inline quantity
+        if( 'nf_inline_quantity' == $column ) {
+            $total_quantity = 0;
+
+            $form_fields = Ninja_Forms()->form( $form_id )->get_fields();
+
+            // sum all product inline quantities
+            foreach( $form_fields as $field ) {
+                // make the same validations of change_columns
+                if( is_object( $field ) ) {
+                    $field = array(
+                        'id' => $field->get_id(),
+                        'settings' => $field->get_settings()
+                    );
+                }
+
+                $hidden_field_types = apply_filters( 'nf_sub_hidden_field_types', array() );
+                if( in_array( $field[ 'settings' ][ 'type' ], array_values( $hidden_field_types ) ) ) continue;
+
+                // if it's a product and has inline quantity add it
+                if( 'product' === $field[ 'settings' ][ 'type' ] &&  $field[ 'settings' ][ 'product_use_quantity' ] ) {
+                    $total_quantity += intval( $sub->get_field_value( $field[ 'id' ] ) );
+                }
+            }
+
+            echo $total_quantity;
         }
 
     }
@@ -390,4 +437,3 @@ class NF_Admin_CPT_Submission
     }
 
 }
-
